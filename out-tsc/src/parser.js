@@ -8,7 +8,8 @@ export var TokenKind;
     TokenKind[TokenKind["Move"] = 3] = "Move";
     TokenKind[TokenKind["Turn"] = 4] = "Turn";
     TokenKind[TokenKind["Space"] = 5] = "Space";
-    TokenKind[TokenKind["BreakLine"] = 6] = "BreakLine";
+    TokenKind[TokenKind["Color"] = 6] = "Color";
+    TokenKind[TokenKind["BreakLine"] = 7] = "BreakLine";
 })(TokenKind || (TokenKind = {}));
 export const LEXER = buildLexer([
     [true, /^\d+/g, TokenKind.Number],

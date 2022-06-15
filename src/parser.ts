@@ -9,6 +9,8 @@ export enum TokenKind {
     Move,
     Turn,
     Space,
+    Color,
+    ColorType,
     BreakLine
 }
 
@@ -19,6 +21,8 @@ export const LEXER = buildLexer([
     [true, /^(forward|backward)/ig, TokenKind.Move],
     [true, /^turn/ig, TokenKind.Turn],
     [false, /^ /g, TokenKind.Space],
+    [true, /^color/ig, TokenKind.Color],
+    [true, /^(red|green|blue|yellow|black|none)/ig, TokenKind.ColorType],
     [false, /^\n/g, TokenKind.BreakLine],
 ]);
 
@@ -43,6 +47,10 @@ function applyTurn(first : [Token<TokenKind.Turn>, Token<TokenKind.Number>]) : s
     return ["TURN " + first[1].text];
 }
 
+function applyColor(first : [Token<TokenKind.Color>, Token<TokenKind.ColorType>]) : string[] {
+    return [first[0].text.toUpperCase() + " " + first[1].text.toUpperCase()];
+}
+
 const FOR = rule<TokenKind, string[]>();
 const EXP = rule<TokenKind, string[]>();
 
@@ -55,6 +63,7 @@ EXP.setPattern(
         FOR,
         apply(tok(TokenKind.Move), applyMove),
         apply(seq(tok(TokenKind.Turn), tok(TokenKind.Number)), applyTurn),
+        apply(seq(tok(TokenKind.Color), tok(TokenKind.ColorType)), applyColor)
     )
 )
 

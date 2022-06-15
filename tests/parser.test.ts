@@ -9,13 +9,13 @@ describe('Lexer', () => {
 
     it('should parse turn correctly', async () => {
         let parsed = LEXER.parse(`TURN 30`);
-        expect(parsed.kind).toBe(TokenKind.Turn);
+        expect(parsed?.kind).toBe(TokenKind.Turn);
     });
 
     it('should parse tokens correctly', async () => {
         let parsed = LEXER.parse(`FOR 10 FORWARD END`);
-        expect(parsed.kind).toBe(TokenKind.For);
-        expect(parsed.text).toBe("FOR");
+        expect(parsed?.kind).toBe(TokenKind.For);
+        expect(parsed?.text).toBe("FOR");
     });
 });
 
@@ -28,6 +28,11 @@ describe('Parser', () => {
     it('should parse turn correctly', async () => {
         let res = evaluate(`turn 90`);
         expect(res).toEqual(["TURN 90"]);
+    });
+
+    it('should parse color correctly', async () => {
+        let res = evaluate(`color red`);
+        expect(res).toEqual(["COLOR RED"]);
     });
 
     it('should parse correctly', async () => {
