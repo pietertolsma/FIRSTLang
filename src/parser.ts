@@ -27,7 +27,7 @@ function applyFor(first : [Token<TokenKind.For>,
     string[][], 
     Token<TokenKind.End>]) : string[] {
 
-    let res = [];
+    let res : string[] = [];
 
     for (let i = 0; i < parseInt(first[1].text); i++) {
         res = res.concat(first[2].flat());

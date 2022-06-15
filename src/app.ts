@@ -1,2 +1,1 @@
-
-    console.log("Hi there!");
+export {evaluate} from "./parser"
