@@ -18,7 +18,7 @@ end
 
 myColor = "black"
 
-color myColor
+color(myColor)
 
 for 2
   backward(5)

@@ -132,8 +132,8 @@ TURN.setPattern(
 COLOR.setPattern(
     apply(
         alt(
-            seq(tok(TokenKind.Color), STRING),
-            seq(tok(TokenKind.Color), VAR_REF)
+            seq(tok(TokenKind.Color), kmid(tok(TokenKind.LParenthesis), STRING, tok(TokenKind.RParenthesis))),
+            seq(tok(TokenKind.Color), kmid(tok(TokenKind.LParenthesis), VAR_REF, tok(TokenKind.RParenthesis)))
         ), applyColor
     )
 );
