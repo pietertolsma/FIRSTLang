@@ -4,6 +4,7 @@ import { alt, apply, kmid, lrec_sc, seq, str, tok, kright, rep, lrec } from 'typ
 
 export enum TokenKind {
     Number,
+    String,
     For,
     End,
     Move,
@@ -11,11 +12,15 @@ export enum TokenKind {
     Space,
     Color,
     ColorType,
-    BreakLine
+    BreakLine,
+    Variable,
+    VariableReference,
 }
 
+let heap : {[name : string] : string | number} = {};
+
 export const LEXER = buildLexer([
-    [true, /^\d+/g, TokenKind.Number],
+    [true, /^-?\d+/g, TokenKind.Number],
     [true, /^for/ig, TokenKind.For],
     [true, /^end/ig, TokenKind.End],
     [true, /^(forward|backward)/ig, TokenKind.Move],
@@ -23,61 +28,122 @@ export const LEXER = buildLexer([
     [false, /^ /g, TokenKind.Space],
     [true, /^color/ig, TokenKind.Color],
     [true, /^(red|green|blue|yellow|black|none)/ig, TokenKind.ColorType],
+    [true, /^[A-Za-z_]+[ ]?=[ ]?/g, TokenKind.Variable],
+    [true, /^[A-Za-z_]+/g, TokenKind.VariableReference],
+    [true, /^('|").*?('|")/g, TokenKind.String],
     [false, /^\n/g, TokenKind.BreakLine],
 ]);
 
 function applyFor(first : [Token<TokenKind.For>, 
-    Token<TokenKind.Number>, 
+    number | string, 
     string[], 
     Token<TokenKind.End>]) : string[] {
 
+    if (typeof first[1] === "string") {
+        return ["ERROR: FOR loop variable must be a number"];
+    }
+
     let res : string[] = [];
 
-    for (let i = 0; i < parseInt(first[1].text); i++) {
+    for (let i = 0; i < first[1]; i++) {
         res = res.concat(first[2]);
     }
     return res;
 }
 
-function applyMove(first : [Token<TokenKind.Move>, Token<TokenKind.Number>]) : string[] {
-    return [first[0].text.toUpperCase() + " " + first[1].text];
+function applyMove(first : [Token<TokenKind.Move>, number]) : string[] {
+    return [first[0].text.toUpperCase() + " " + first[1]];
 }
 
-function applyTurn(first : [Token<TokenKind.Turn>, Token<TokenKind.Number>]) : string[] {
-    return ["TURN " + first[1].text];
+function applyTurn(first : [Token<TokenKind.Turn>, number]) : string[] {
+    return ["TURN " + first[1]];
 }
 
-function applyColor(first : [Token<TokenKind.Color>, Token<TokenKind.ColorType>]) : string[] {
-    return [first[0].text.toUpperCase() + " " + first[1].text.toUpperCase()];
+function applyColor(first : [Token<TokenKind.Color>, string | number]) : string[] {
+    return [first[0].text.toUpperCase() + " " + first[1]];
+}
+
+function applyNumber(first : Token<TokenKind.Number>) : number {
+    return parseInt(first.text);
+}
+
+function lookupVariable(first: Token<TokenKind.VariableReference>) : string | number {
+    if (first.text in heap) {
+        return heap[first.text];
+    } else {
+        return "undefined";
+    }
 }
 
 function joinResults(first: string[], second: string[]) : string[] {
     return first.concat(second);
 }
 
+function applyVariable(first : [Token<TokenKind.Variable>, string | number]) : string[] {
+    heap[first[0].text.split(" ")[0]] = first[1];
+    return [];
+}
+
 const FOR = rule<TokenKind, string[]>();
 const EXP = rule<TokenKind, string[]>();
+const NUM = rule<TokenKind, number>();
+const STRING = rule<TokenKind, string>();
 
 const ACTION = rule<TokenKind, string[]>();
 
 const COLOR = rule<TokenKind, string[]>();
 const TURN = rule<TokenKind, string[]>();
 const MOVE = rule<TokenKind, string[]>();
+const VAR = rule<TokenKind, string[]>();
+const VAR_REF = rule<TokenKind, string | number >();
+
+NUM.setPattern(
+    apply(tok(TokenKind.Number), applyNumber)
+)
+
+STRING.setPattern(
+    apply(tok(TokenKind.String), (first: Token<TokenKind.String>) => first.text.slice(1, -1))
+)
 
 MOVE.setPattern(
-    apply(seq(tok(TokenKind.Move), tok(TokenKind.Number)), applyMove)
+    apply(seq(tok(TokenKind.Move), NUM), applyMove)
 )
 
 TURN.setPattern(
-    apply(seq(tok(TokenKind.Turn), tok(TokenKind.Number)), applyTurn)
+    apply(seq(tok(TokenKind.Turn), NUM), applyTurn)
 );
 
 COLOR.setPattern(
-    apply(seq(tok(TokenKind.Color), tok(TokenKind.ColorType)), applyColor)
+    apply(
+        alt(
+            seq(tok(TokenKind.Color), STRING),
+            seq(tok(TokenKind.Color), VAR_REF)
+        ), applyColor
+    )
+);
+
+VAR.setPattern(
+    apply(
+        alt(
+            seq(tok(TokenKind.Variable), NUM),
+            seq(tok(TokenKind.Variable), STRING),
+            seq(tok(TokenKind.Variable), VAR_REF)
+        ),
+        applyVariable
+    )
+)
+
+VAR_REF.setPattern(
+    apply(tok(TokenKind.VariableReference), lookupVariable)
 )
 
 FOR.setPattern(
-    apply(seq(tok(TokenKind.For), tok(TokenKind.Number), EXP, tok(TokenKind.End)), applyFor)
+    apply(
+        alt(
+            seq(tok(TokenKind.For), NUM, EXP, tok(TokenKind.End)),
+            seq(tok(TokenKind.For), VAR_REF, EXP, tok(TokenKind.End))
+        ),
+    applyFor)
 )
 
 ACTION.setPattern(
@@ -85,7 +151,8 @@ ACTION.setPattern(
         FOR,
         COLOR,
         TURN,
-        MOVE
+        MOVE,
+        VAR,
     )
 )
 
