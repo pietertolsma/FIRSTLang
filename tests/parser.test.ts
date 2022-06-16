@@ -67,7 +67,11 @@ describe("Evaluation", () => {
             });
     });
     
-    
+    it("Should not include = sign in variable", async () => {
+        let tree = evaluate("test= 10 forward(test)");
+        let [output, errors] : [string[], string[]] = execute(tree);
+        expect(output).toEqual(["forward 10"]);
+    });
 
     it("Should produce the correct output", async () => {
         let tree = evaluate("test = 10 forward(test)");

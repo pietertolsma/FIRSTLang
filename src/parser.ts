@@ -51,15 +51,19 @@ function statementToProgram(first: ast.Statement) : ast.FIRSTProgram {
 function applyVariableReference(first: Token<TokenKind.VariableReference>) : ast.ReferenceExpression {
     return {
         kind: "ReferenceExpression",
-        name: first.text.split(" ")[0],
+        name: first.text.split(" ")[0].trim(),
         type: "unknown"
     }
 }
 
 function applyVariableDeclaration(first: [Token<TokenKind.Variable>, ast.Expression]) : ast.VariableDeclaration {
+    let name = first[0].text.split(" ")[0].trim();
+    if (name.charAt(name.length - 1) == "=") {
+        name = name.substring(0, name.length - 1);
+    }
     return {
         kind: "VariableDeclaration",
-        name: first[0].text.split(" ")[0],
+        name: name,
         type: first[1].type,
         value: first[1]
     }
