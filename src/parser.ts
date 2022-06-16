@@ -51,7 +51,10 @@ function applyFor(first : [Token<TokenKind.For>,
     return res;
 }
 
-function applyMove(first : [Token<TokenKind.Move>, number]) : string[] {
+function applyMove(first : [Token<TokenKind.Move>, number | string]) : string[] {
+    if (typeof first[1] === "string") {
+        return ["ERROR: " + first[0].text.toUpperCase() + " must be followed by a number"];
+    }
     return [first[0].text.toUpperCase() + " " + first[1]];
 }
 
@@ -106,7 +109,11 @@ STRING.setPattern(
 )
 
 MOVE.setPattern(
-    apply(seq(tok(TokenKind.Move), NUM), applyMove)
+    apply(
+        alt(
+            seq(tok(TokenKind.Move), NUM),
+            seq(tok(TokenKind.Move), VAR_REF)
+        ), applyMove)
 )
 
 TURN.setPattern(
