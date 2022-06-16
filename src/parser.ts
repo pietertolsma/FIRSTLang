@@ -1,6 +1,6 @@
 import { Token } from 'typescript-parsec';
 import { buildLexer, expectEOF, expectSingleResult, rule } from 'typescript-parsec';
-import { alt, apply, kmid, lrec_sc, seq, str, tok, kright, rep } from 'typescript-parsec';
+import { alt, apply, kmid, lrec_sc, seq, str, tok, kright, rep, lrec } from 'typescript-parsec';
 
 export enum TokenKind {
     Number,
@@ -19,7 +19,7 @@ export const LEXER = buildLexer([
     [true, /^for/ig, TokenKind.For],
     [true, /^end/ig, TokenKind.End],
     [true, /^(forward|backward)/ig, TokenKind.Move],
-    [true, /^turn/ig, TokenKind.Turn],
+    [true, /^(turn|rotate)/ig, TokenKind.Turn],
     [false, /^ /g, TokenKind.Space],
     [true, /^color/ig, TokenKind.Color],
     [true, /^(red|green|blue|yellow|black|none)/ig, TokenKind.ColorType],
@@ -28,19 +28,19 @@ export const LEXER = buildLexer([
 
 function applyFor(first : [Token<TokenKind.For>, 
     Token<TokenKind.Number>, 
-    string[][], 
+    string[], 
     Token<TokenKind.End>]) : string[] {
 
     let res : string[] = [];
 
     for (let i = 0; i < parseInt(first[1].text); i++) {
-        res = res.concat(first[2].flat());
+        res = res.concat(first[2]);
     }
     return res;
 }
 
-function applyMove(first : Token<TokenKind.Move>) : string[] {
-    return [first.text.toUpperCase()];
+function applyMove(first : [Token<TokenKind.Move>, Token<TokenKind.Number>]) : string[] {
+    return [first[0].text.toUpperCase() + " " + first[1].text];
 }
 
 function applyTurn(first : [Token<TokenKind.Turn>, Token<TokenKind.Number>]) : string[] {
@@ -51,22 +51,52 @@ function applyColor(first : [Token<TokenKind.Color>, Token<TokenKind.ColorType>]
     return [first[0].text.toUpperCase() + " " + first[1].text.toUpperCase()];
 }
 
+function joinResults(first: string[], second: string[]) : string[] {
+    return first.concat(second);
+}
+
 const FOR = rule<TokenKind, string[]>();
 const EXP = rule<TokenKind, string[]>();
 
-FOR.setPattern(
-    apply(seq(tok(TokenKind.For), tok(TokenKind.Number), rep(EXP), tok(TokenKind.End)), applyFor)
+const ACTION = rule<TokenKind, string[]>();
+
+const COLOR = rule<TokenKind, string[]>();
+const TURN = rule<TokenKind, string[]>();
+const MOVE = rule<TokenKind, string[]>();
+
+MOVE.setPattern(
+    apply(seq(tok(TokenKind.Move), tok(TokenKind.Number)), applyMove)
 )
 
-EXP.setPattern(
+TURN.setPattern(
+    apply(seq(tok(TokenKind.Turn), tok(TokenKind.Number)), applyTurn)
+);
+
+COLOR.setPattern(
+    apply(seq(tok(TokenKind.Color), tok(TokenKind.ColorType)), applyColor)
+)
+
+FOR.setPattern(
+    apply(seq(tok(TokenKind.For), tok(TokenKind.Number), EXP, tok(TokenKind.End)), applyFor)
+)
+
+ACTION.setPattern(
     alt(
         FOR,
-        apply(tok(TokenKind.Move), applyMove),
-        apply(seq(tok(TokenKind.Turn), tok(TokenKind.Number)), applyTurn),
-        apply(seq(tok(TokenKind.Color), tok(TokenKind.ColorType)), applyColor)
+        COLOR,
+        TURN,
+        MOVE
     )
 )
 
-export function evaluate(expr : string) : string[] {
-    return expectSingleResult(expectEOF(EXP.parse(LEXER.parse(expr))));
+EXP.setPattern(
+        lrec_sc(ACTION, ACTION, joinResults),
+)
+
+export function evaluate(expr : string) : (string[] | any) {
+    try {
+        return expectSingleResult(expectEOF(EXP.parse(LEXER.parse(expr))));
+    } catch (error : any) {
+        return error;
+    }
 }

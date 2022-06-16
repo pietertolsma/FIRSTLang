@@ -4,12 +4,13 @@
     "module": "esnext",
     "moduleResolution": "node",                     
     "noEmitOnError": true,
+    "declaration": true,
     "lib": ["es2019"],                            
     "strict": true,  
-    "esModuleInterop": false,                 
+    "esModuleInterop": true,           
     "outDir": "out-tsc",
     "rootDir": "./"
   }
   ,
-  "include": ["./src/**/*.ts", "./tests/**/*.ts"]
+  "include": ["./src/**/*.ts", "./src/**/*.d.ts", "./tests/**/*.ts"]
 }
