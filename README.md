@@ -10,21 +10,17 @@ evaluate("for 10 turn(10) forward(5) end")
 
 ## Examples
 ```
-runs = 2
-for runs
-  forward(5)
+start = 1
+finish = 3
+for i = start to finish
+  forward(i)
   turn(10)
 end
 
 myColor = "black"
 
 color(myColor)
-
-for 2
-  backward(5)
-  turn(10)
-end
 ```
 
 This will output the following:
-`["FORWARD 5", "TURN 10", "FORWARD 5", "TURN 10", "COLOR black", "BACKWARD 5", "TURN 10", "BACKWARD 5", "TURN 10"]`
+`["forward 1", "turn 10", "forward 2", "turn 10", "color black"]`
