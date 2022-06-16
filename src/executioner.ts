@@ -21,6 +21,7 @@ function processMath(expression: ast.MathExpression, output : string[], stack : 
             return processExpression(expression.left, output, stack, errors) / processExpression(expression.right, output, stack, errors);
         default:
             errors.push(`Unknown operator ${expression.operator}`);
+            return 0;
     }
 
 }
@@ -66,13 +67,19 @@ function processStatement(statement: ast.Statement, output : string[], stack : [
     
 }
 
-export function execute(ast : ast.FIRSTProgram) : [string[], string[]]{
+export function execute(program : ast.FIRSTProgram) : [string[], string[]]{
 
     let stack : [{[name: string] : any}] = [{}];
     let output : string[] = []
     let errors : string[] = [];
 
-    for (const statement of ast.statements) {
+    if (program.statements === undefined) {
+        errors.push("No statements found");
+        return [output, errors];
+    }
+
+    for (let i = 0; i < program.statements.length; i++){
+        const statement = program.statements[i];
         processStatement(statement, output, stack, errors);
     }
 

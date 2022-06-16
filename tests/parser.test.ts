@@ -81,6 +81,12 @@ describe("Evaluation", () => {
         expect(errors).toEqual(["Undefined variable test"]);
     });
 
+    it("Should produce the correct output with for loop containing both variables", async () => {
+        let tree = evaluate("test = 10 hi = 12 for test = test to hi forward(test) end");
+        let [output, errors] : [string[], string[]] = execute(tree);
+        expect(output).toEqual(["forward 10", "forward 11"]);
+    });
+
     it("Should produce the correct output with for loop", async () => {
         let tree = evaluate("test = 10 for test = test to 12 forward(test) end");
         let [output, errors] : [string[], string[]] = execute(tree);
