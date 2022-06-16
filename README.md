@@ -5,15 +5,15 @@ Free Interactive Robot Steering Tool: A custom scripting language that can be us
 ```
 import {evaluate} from 'firstlang'
 
-evaluate("for 10 turn 10 forward 5 end")
+evaluate("for 10 turn(10) forward(5) end")
 ```
 
 ## Examples
 ```
 runs = 2
 for runs
-  forward 5
-  turn 10
+  forward(5)
+  turn(10)
 end
 
 myColor = "black"
@@ -21,8 +21,8 @@ myColor = "black"
 color myColor
 
 for 2
-  backward 5
-  turn 10
+  backward(5)
+  turn(10)
 end
 ```
 

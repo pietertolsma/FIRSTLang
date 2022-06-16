@@ -11,7 +11,8 @@ export enum TokenKind {
     Turn,
     Space,
     Color,
-    ColorType,
+    LParenthesis,
+    RParenthesis,
     BreakLine,
     Variable,
     VariableReference,
@@ -20,6 +21,8 @@ export enum TokenKind {
 let heap : {[name : string] : string | number} = {};
 
 export const LEXER = buildLexer([
+    [true, /^\(/g, TokenKind.LParenthesis],
+    [true, /^\)/g, TokenKind.RParenthesis],
     [true, /^-?\d+/g, TokenKind.Number],
     [true, /^for/ig, TokenKind.For],
     [true, /^end/ig, TokenKind.End],
@@ -27,7 +30,6 @@ export const LEXER = buildLexer([
     [true, /^(turn|rotate)/ig, TokenKind.Turn],
     [false, /^ /g, TokenKind.Space],
     [true, /^color/ig, TokenKind.Color],
-    [true, /^(red|green|blue|yellow|black|none)/ig, TokenKind.ColorType],
     [true, /^[A-Za-z_]+[ ]?=[ ]?/g, TokenKind.Variable],
     [true, /^[A-Za-z_]+/g, TokenKind.VariableReference],
     [true, /^('|").*?('|")/g, TokenKind.String],
@@ -58,7 +60,10 @@ function applyMove(first : [Token<TokenKind.Move>, number | string]) : string[] 
     return [first[0].text.toUpperCase() + " " + first[1]];
 }
 
-function applyTurn(first : [Token<TokenKind.Turn>, number]) : string[] {
+function applyTurn(first : [Token<TokenKind.Turn>, number | string]) : string[] {
+    if (typeof first[1] === "string") {
+        return ["ERROR: " + first[0].text.toUpperCase() + " must be followed by a number"];
+    }
     return ["TURN " + first[1]];
 }
 
@@ -111,13 +116,17 @@ STRING.setPattern(
 MOVE.setPattern(
     apply(
         alt(
-            seq(tok(TokenKind.Move), NUM),
-            seq(tok(TokenKind.Move), VAR_REF)
+            seq(tok(TokenKind.Move), kmid(tok(TokenKind.LParenthesis), NUM,  tok(TokenKind.RParenthesis))),
+            seq(tok(TokenKind.Move), kmid(tok(TokenKind.LParenthesis), VAR_REF,  tok(TokenKind.RParenthesis)))
         ), applyMove)
 )
 
 TURN.setPattern(
-    apply(seq(tok(TokenKind.Turn), NUM), applyTurn)
+    apply(
+        alt(
+            seq(tok(TokenKind.Turn), kmid(tok(TokenKind.LParenthesis), NUM, tok(TokenKind.RParenthesis))),
+            seq(tok(TokenKind.Turn), kmid(tok(TokenKind.LParenthesis), VAR_REF, tok(TokenKind.RParenthesis)))
+        ),applyTurn)
 );
 
 COLOR.setPattern(
