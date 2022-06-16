@@ -3,9 +3,9 @@ Free Interactive Robot Steering Tool: A custom scripting language that can be us
 
 ## How to use
 ```
-import {evaluate} from 'firstlang'
+import run from 'firstlang'
 
-evaluate("for 10 turn(10) forward(5) end")
+run("for i = 1 to 10 turn(i) forward(5) end")
 ```
 
 ## Examples
