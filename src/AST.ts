@@ -31,6 +31,7 @@ export type Type =
 export interface ReferenceExpression {
     kind: 'ReferenceExpression';
     name: EntityName;
+    type : Type;
 }
 
 export interface ConstantExpression {
@@ -44,6 +45,7 @@ export interface MathExpression {
     left: Expression;
     operator: "add" | "sub" | "mul" | "div";
     right: Expression;
+    type: Type;
 }
 
 export interface ColorExpression {
@@ -128,6 +130,7 @@ export const EXAMPLE_PROGRAM : FIRSTProgram = {
             value: {
                 kind: "MathExpression",
                 operator: "mul",
+                type: "Number",
                 left: {
                     kind: "ConstantExpression",
                     value: 1,
@@ -151,6 +154,7 @@ export const EXAMPLE_PROGRAM : FIRSTProgram = {
             end: {
                 kind: "ReferenceExpression",
                 name: "x",
+                type: "Number"
             },
             step: {
                 kind: "ConstantExpression",
@@ -165,6 +169,7 @@ export const EXAMPLE_PROGRAM : FIRSTProgram = {
                     value: {
                         kind: "ReferenceExpression",
                         name: "i",
+                        type: "Number"
                     }
                 },
                 {
@@ -172,6 +177,7 @@ export const EXAMPLE_PROGRAM : FIRSTProgram = {
                     distance: {
                         kind: "ReferenceExpression",
                         name: "x",
+                        type: "Number"
                     },
                     direction: "forward"
                 }

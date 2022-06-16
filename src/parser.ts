@@ -1,6 +1,6 @@
 import { expectEOF, expectSingleResult, rule, Token } from 'typescript-parsec';
 import { LEXER } from "./tokenizer";
-import { alt, apply, kmid, lrec_sc, seq, str, tok, kright, rep, lrec } from 'typescript-parsec';
+import { alt, apply, kmid, lrec_sc, seq, str, tok, kright, kleft, rep, lrec } from 'typescript-parsec';
 import { TokenKind } from './tokenizer';
 
 import * as ast from "./AST";
@@ -27,7 +27,22 @@ function applyMove(first: [Token<TokenKind.Move>, ast.Expression]) : ast.Move {
     }
 }
 
-function applySingleProgram(first: ast.Statement) : ast.FIRSTProgram {
+function applyFor(first: [Token<TokenKind.For>, ast.VariableDeclaration, ast.Expression, ast.Statement[]]) : ast.For {
+    return {
+        kind: "For",
+        name: first[1].name,
+        start: first[1].value,
+        end: first[2],
+        step: {
+            kind: "ConstantExpression",
+            value: 1,
+            type: "Number"
+        },
+        body: first[3]
+    }
+}
+
+function statementToProgram(first: ast.Statement) : ast.FIRSTProgram {
     return {
         statements: [first]
     }
@@ -36,11 +51,12 @@ function applySingleProgram(first: ast.Statement) : ast.FIRSTProgram {
 function applyVariableReference(first: Token<TokenKind.VariableReference>) : ast.ReferenceExpression {
     return {
         kind: "ReferenceExpression",
-        name: first.text.split(" ")[0]
+        name: first.text.split(" ")[0],
+        type: "unknown"
     }
 }
 
-function applyVariableDeclaration(first: [Token<TokenKind.Variable>, ast.ConstantExpression]) : ast.VariableDeclaration {
+function applyVariableDeclaration(first: [Token<TokenKind.Variable>, ast.Expression]) : ast.VariableDeclaration {
     return {
         kind: "VariableDeclaration",
         name: first[0].text.split(" ")[0],
@@ -52,8 +68,9 @@ function applyVariableDeclaration(first: [Token<TokenKind.Variable>, ast.Constan
 let CONST = rule<TokenKind, ast.ConstantExpression>();
 let VAR_REF = rule<TokenKind, ast.ReferenceExpression>();
 let VAR_DEC = rule<TokenKind, ast.VariableDeclaration>();
+let FOR = rule<TokenKind, ast.For>();
 let MOVE = rule<TokenKind, ast.Move>();
-let STATEMENT = rule<TokenKind, ast.FIRSTProgram>();
+let STATEMENT = rule<TokenKind, ast.Statement>();
 let EXPRESSION = rule<TokenKind, ast.Expression>();
 let EXP = rule<TokenKind, ast.FIRSTProgram>();
 
@@ -90,21 +107,28 @@ VAR_REF.setPattern(
 
 VAR_DEC.setPattern(
     apply(
-        seq(tok(TokenKind.Variable), CONST),
+        seq(tok(TokenKind.Variable), EXPRESSION),
         applyVariableDeclaration
     )
 )
 
+FOR.setPattern(
+    apply(
+        seq(tok(TokenKind.For), kleft(VAR_DEC, str('to')), EXPRESSION, kleft(rep(STATEMENT), tok(TokenKind.End))),
+        applyFor
+    )
+)
+
 STATEMENT.setPattern(
-    apply(alt(
+    alt(
         VAR_DEC, 
-        MOVE
-    ),
-    applySingleProgram)
+        MOVE,
+        FOR
+    )
 )
 
 EXP.setPattern(
-        lrec_sc(STATEMENT, STATEMENT, joinResults),
+        lrec_sc(apply(STATEMENT, statementToProgram), apply(STATEMENT, statementToProgram), joinResults),
 )
 
 export function evaluate(expr : string) : (string[] | any) {
